@@ -1,78 +1,32 @@
 package edu.escuelaing.arep.server;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
+import java.io.*;
 
-import edu.escuelaing.arep.calculator.Calculator;
-
-/**
- * Calculadora de seno, coseno y tangente
- * @author Johann Cepeda
- */
 public class HttpServer {
 
-    /**
-     * Metodo principal de la clase
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-        ServerSocket serverSocket = null;
+    private static HttpServer _instance = new HttpServer();
+
+    public String startServer(String[] args) throws IOException {
+
+        StringBuilder result = new StringBuilder();
+        URL url = new URL("http://localhost:8080/" + args[0] + "-" + args[1]);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("GET");
         try {
-            serverSocket = new ServerSocket(35000);
-        } catch (IOException e) {
-            System.err.println("Could not listen on port: 35000.");
-            System.exit(1);
-        }
-        Socket clientSocket = null;
-        try {
-            clientSocket = serverSocket.accept();
-        } catch (IOException e) {
-            System.err.println("Accept failed.");
-            System.exit(1);
-        }
-
-        PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
-        BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-        String inputLine, outputLine;
-        String currentOp = "cos";
-
-        while ((inputLine = in.readLine()) != null) {
-            if (inputLine.startsWith("fun")) {
-                String[] op = inputLine.split(":");
-                if (!op[1].equals("sen") && !op[1].equals("cos") && !op[1].equals("tan")) {
-                    out.println("Operacion no valida");
-                } else {
-                    currentOp = op[1];
-                    System.out.println("Cambio de operacion a: " + currentOp);
-                    out.println("Cambio de operacion a: " + currentOp);
-                }
-            } else {
-                try {
-                    if (currentOp.equals("cos"))
-                        outputLine = Calculator.cos(inputLine);
-                    else if (currentOp.equals("sen"))
-                        outputLine = Calculator.sen(inputLine);
-                    else if (currentOp.equals("tan"))
-                        outputLine = Calculator.tan(inputLine);
-                    else
-                        outputLine = "Operacion invalida";
-
-                    // Resultados
-                    out.println(outputLine);
-                } catch (Exception e) {
-                    throw new Exception("Formato invalido");
-                }
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            for (String line; (line = reader.readLine()) != null;) {
+                result.append(line);
             }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            System.out.println("Ha ocurrido un error");
         }
+        System.out.println(result.toString());
+        return result.toString();
+    }
 
-        out.close();
-        in.close();
-        clientSocket.close();
-        serverSocket.close();
+    public static HttpServer getInstance() {
+        return _instance;
     }
 }
